@@ -209,6 +209,8 @@ free_encoder(SymbolEncoder *pSE)
 		if(p)
 			free_code(p);
 	}
+
+	free(pSE);
 }
 
 static void
