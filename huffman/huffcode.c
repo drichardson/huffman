@@ -1,6 +1,6 @@
 /*
  *  huffman_coder - Encode/Decode files using Huffman encoding.
- *  Copyright (C) 2003  Douglas Ryan Richardson
+ *  Copyright (C) 2003  Douglas Ryan Richardson; Gauss Interprise, Inc
  *
  *  This library is free software; you can redistribute it and/or
  *  modify it under the terms of the GNU Lesser General Public
@@ -27,8 +27,9 @@ static void
 version(FILE *out)
 {
 	fputs("huffman 0.1\n"
-		  "Copyright (C) 2003 Douglas Ryan Richardson\n",
-		  out);
+	      "Copyright (C) 2003 Douglas Ryan Richardson"
+	      "; Gauss Interprise, Inc\n",
+	      out);
 }
 
 static void
