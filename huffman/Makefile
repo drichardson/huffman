@@ -1,4 +1,4 @@
-#CFLAGS=-O2
+#CFLAGS=-O2 -Wall -Werror
 CFLAGS=-g -Wall -Werror
 
 all: huffcode libhuffman.a

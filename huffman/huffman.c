@@ -431,7 +431,7 @@ calculate_huffman_codes(SymbolFrequencies * pSF)
 	huffman_node *m1 = NULL, *m2 = NULL;
 	SymbolEncoder *pSE = NULL;
 	
-#if 0	
+#if 0
 	printf("BEFORE SORT\n");
 	print_freqs(pSF);
 #endif
@@ -576,7 +576,8 @@ write_code_table_to_memory(buf_cache *pc,
 			if(write_cache(pc, &uc, sizeof(uc)))
 				return 1;
 			/* Write the 1 byte code bit length. */
-			if(write_cache(pc, &p->numbits, sizeof(p->numbits)))
+			uc = p->numbits;
+			if(write_cache(pc, &uc, sizeof(uc)))
 				return 1;
 			/* Write the code bytes. */
 			numbytes = numbytes_from_numbits(p->numbits);
