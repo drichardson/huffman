@@ -31,7 +31,7 @@ static int memory_decode_file(FILE *in, FILE *out);
 static void
 version(FILE *out)
 {
-	fputs("huffman 0.2\n"
+	fputs("huffcode 0.3\n"
 	      "Copyright (C) 2003 Douglas Ryan Richardson"
 	      "; Gauss Interprise, Inc\n",
 	      out);
