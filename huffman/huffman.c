@@ -1,5 +1,5 @@
 /*
- *  huffman_coder - Encode/Decode files using Huffman encoding.
+ *  huffman - Encode/Decode files using Huffman encoding.
  *  Copyright (C) 2003  Douglas Ryan Richardson; Gauss Interprise, Inc
  *
  *  This library is free software; you can redistribute it and/or
@@ -163,6 +163,7 @@ new_nonleaf_node(unsigned long count, huffman_node *zero, huffman_node *one)
 	p->count = count;
 	p->zero = zero;
 	p->one = one;
+	p->parent = 0;
 	
 	return p;
 }
@@ -229,12 +230,17 @@ static int init_cache(buf_cache* pc,
 					  unsigned char **pbufout,
 					  unsigned int *pbufoutlen)
 {
-	assert(pc);
+	assert(pc && pbufout && pbufoutlen);
+	if(!pbufout || !pbufoutlen)
+		return 1;
+	
 	pc->cache = (unsigned char*)malloc(cache_size);
 	pc->cache_len = cache_size;
 	pc->cache_cur = 0;
 	pc->pbufout = pbufout;
+	*pbufout = NULL;
 	pc->pbufoutlen = pbufoutlen;
+	*pbufoutlen = 0;
 
 	return pc->cache ? 0 : 1;
 }
@@ -259,6 +265,8 @@ static int flush_cache(buf_cache* pc)
 		unsigned char* tmp = realloc(*pc->pbufout, newlen);
 		if(!tmp)
 			return 1;
+
+		memcpy(tmp + *pc->pbufoutlen, pc->cache, pc->cache_cur);
 
 		*pc->pbufout = tmp;
 		*pc->pbufoutlen = newlen;
@@ -983,6 +991,9 @@ int huffman_encode_memory(const unsigned char *bufin,
 	if(rc == 0)
 		rc = do_memory_encode(&cache, bufin, bufinlen, se);
 
+	/* Flush the cache. */
+	flush_cache(&cache);
+	
 	/* Free the Huffman tree. */
 	free_huffman_tree(root);
 	free_encoder(se);
@@ -1004,7 +1015,7 @@ int huffman_decode_memory(const unsigned char *bufin,
 	if(!pbufout || !pbufoutlen)
 		return 1;
 
-	if(!init_cache(&cache, CACHE_SIZE, pbufout, pbufoutlen))
+	if(init_cache(&cache, CACHE_SIZE, pbufout, pbufoutlen))
 	   return 1;
 	
 	/* Read the Huffman code table. */
@@ -1034,6 +1045,9 @@ int huffman_decode_memory(const unsigned char *bufin,
 			}
 		}
 	}
+
+	/* Flush the cache. */
+	flush_cache(&cache);	
 
 	free_huffman_tree(root);
 	free_cache(&cache);
