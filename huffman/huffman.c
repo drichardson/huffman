@@ -712,15 +712,15 @@ memread(const unsigned char* buf,
 static huffman_node*
 read_code_table_from_memory(const unsigned char* bufin,
 							unsigned int bufinlen,
+							unsigned int *pindex,
 							unsigned int *pDataBytes)
 {
 	huffman_node *root = new_nonleaf_node(0, NULL, NULL);
 	unsigned int count;
-	unsigned int cur = 0;
 	
 	/* Read the number of entries.
 	   (it is stored in network byte order). */
-	if(memread(bufin, bufinlen, &cur, &count, sizeof(count)))
+	if(memread(bufin, bufinlen, pindex, &count, sizeof(count)))
 	{
 		free_huffman_tree(root);
 		return NULL;
@@ -729,7 +729,7 @@ read_code_table_from_memory(const unsigned char* bufin,
 	count = ntohl(count);
 
 	/* Read the number of data bytes this encoding represents. */
-	if(memread(bufin, bufinlen, &cur, pDataBytes, sizeof(*pDataBytes)))
+	if(memread(bufin, bufinlen, pindex, pDataBytes, sizeof(*pDataBytes)))
 	{
 		free_huffman_tree(root);
 		return NULL;
@@ -747,13 +747,13 @@ read_code_table_from_memory(const unsigned char* bufin,
 		unsigned char *bytes;
 		huffman_node *p = root;
 
-		if(memread(bufin, bufinlen, &cur, &symbol, sizeof(symbol)))
+		if(memread(bufin, bufinlen, pindex, &symbol, sizeof(symbol)))
 		{
 			free_huffman_tree(root);
 			return NULL;
 		}
 
-		if(memread(bufin, bufinlen, &cur, &numbits, sizeof(numbits)))
+		if(memread(bufin, bufinlen, pindex, &numbits, sizeof(numbits)))
 		{
 			free_huffman_tree(root);
 			return NULL;
@@ -761,7 +761,7 @@ read_code_table_from_memory(const unsigned char* bufin,
 		
 		numbytes = numbytes_from_numbits(numbits);
 		bytes = (unsigned char*)malloc(numbytes);
-		if(memread(bufin, bufinlen, &cur, bytes, numbytes))
+		if(memread(bufin, bufinlen, pindex, bytes, numbytes))
 		{
 			free(bytes);
 			free_huffman_tree(root);
@@ -1008,7 +1008,7 @@ int huffman_decode_memory(const unsigned char *bufin,
 {
 	huffman_node *root, *p;
 	unsigned int data_count;
-	unsigned int i;
+	unsigned int i = 0;
 	buf_cache cache;
 
 	/* Ensure the arguments are valid. */
@@ -1019,7 +1019,7 @@ int huffman_decode_memory(const unsigned char *bufin,
 	   return 1;
 	
 	/* Read the Huffman code table. */
-	root = read_code_table_from_memory(bufin, bufinlen, &data_count);
+	root = read_code_table_from_memory(bufin, bufinlen, &i, &data_count);
 	if(!root)
 	{
 		free_cache(&cache);
@@ -1028,7 +1028,7 @@ int huffman_decode_memory(const unsigned char *bufin,
 
 	/* Decode the memory. */
 	p = root;
-	for(i = 0; i < bufinlen && data_count > 0; ++i) 
+	for(; i < bufinlen && data_count > 0; ++i) 
 	{
 		unsigned char byte = bufin[i];
 		unsigned char mask = 1;
