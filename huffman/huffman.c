@@ -20,9 +20,16 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <netinet/in.h>
 #include <assert.h>
 #include "huffman.h"
+
+#ifdef WIN32
+#include <winsock2.h>
+#include <malloc.h>
+#define alloca _alloca
+#else
+#include <netinet/in.h>
+#endif
 
 typedef struct huffman_node_tag
 {
@@ -74,11 +81,12 @@ reverse_bits(unsigned char* bits, unsigned long numbits)
 {
 	unsigned long numbytes = numbytes_from_numbits(numbits);
 	unsigned char *tmp =
-		(unsigned char*)alloca(numbytes);
+	    (unsigned char*)alloca(numbytes);
+	unsigned long curbit;
+	long curbyte = 0;
+	
 	memset(tmp, 0, numbytes);
 
-	long curbit;
-	long curbyte = 0;
 	for(curbit = 0; curbit < numbits; ++curbit)
 	{
 		unsigned int bitpos = curbit % 8;
@@ -110,7 +118,7 @@ new_code(const huffman_node* leaf)
 	while(leaf && leaf->parent)
 	{
 		huffman_node *parent = leaf->parent;
-		unsigned char cur_bit = numbits % 8;
+		unsigned char cur_bit = (unsigned char)(numbits % 8);
 		unsigned long cur_byte = numbits / 8;
 
 		/* If we need another byte to hold the code,
@@ -291,8 +299,9 @@ static int write_cache(buf_cache* pc,
 	 * that is, don't use the cache. */
 	if(to_write_len > pc->cache_len - pc->cache_cur)
 	{
+		unsigned int newlen;
 		flush_cache(pc);
-		unsigned int newlen = *pc->pbufoutlen + to_write_len;
+		newlen = *pc->pbufoutlen + to_write_len;
 		tmp = realloc(*pc->pbufout, newlen);
 		if(!tmp)
 			return 1;
@@ -572,12 +581,14 @@ write_code_table_to_memory(buf_cache *pc,
 		if(p)
 		{
 			unsigned int numbytes;
-			unsigned char uc = i;
+			/* The value of i is < MAX_SYMBOLS (256), so it can
+			be stored in an unsigned char. */
+			unsigned char uc = (unsigned char)i;
 			/* Write the 1 byte symbol. */
 			if(write_cache(pc, &uc, sizeof(uc)))
 				return 1;
 			/* Write the 1 byte code bit length. */
-			uc = p->numbits;
+			uc = (unsigned char)p->numbits;
 			if(write_cache(pc, &uc, sizeof(uc)))
 				return 1;
 			/* Write the code bytes. */
@@ -646,7 +657,7 @@ read_code_table(FILE* in, unsigned int *pDataBytes)
 		}
 		
 		numbits = (unsigned char)c;
-		numbytes = numbytes_from_numbits(numbits);
+		numbytes = (unsigned char)numbytes_from_numbits(numbits);
 		bytes = (unsigned char*)malloc(numbytes);
 		if(fread(bytes, 1, numbytes, in) != numbytes)
 		{
@@ -667,7 +678,7 @@ read_code_table(FILE* in, unsigned int *pDataBytes)
 			{
 				if(p->one == NULL)
 				{
-					p->one = curbit == numbits - 1
+					p->one = curbit == (unsigned char)(numbits - 1)
 						? new_leaf_node(symbol)
 						: new_nonleaf_node(0, NULL, NULL);
 					p->one->parent = p;
@@ -678,7 +689,7 @@ read_code_table(FILE* in, unsigned int *pDataBytes)
 			{
 				if(p->zero == NULL)
 				{
-					p->zero = curbit == numbits - 1
+					p->zero = curbit == (unsigned char)(numbits - 1)
 						? new_leaf_node(symbol)
 						: new_nonleaf_node(0, NULL, NULL);
 					p->zero->parent = p;
@@ -761,7 +772,7 @@ read_code_table_from_memory(const unsigned char* bufin,
 			return NULL;
 		}
 		
-		numbytes = numbytes_from_numbits(numbits);
+		numbytes = (unsigned char)numbytes_from_numbits(numbits);
 		bytes = (unsigned char*)malloc(numbytes);
 		if(memread(bufin, bufinlen, pindex, bytes, numbytes))
 		{
@@ -782,7 +793,7 @@ read_code_table_from_memory(const unsigned char* bufin,
 			{
 				if(p->one == NULL)
 				{
-					p->one = curbit == numbits - 1
+					p->one = curbit == (unsigned char)(numbits - 1)
 						? new_leaf_node(symbol)
 						: new_nonleaf_node(0, NULL, NULL);
 					p->one->parent = p;
@@ -793,7 +804,7 @@ read_code_table_from_memory(const unsigned char* bufin,
 			{
 				if(p->zero == NULL)
 				{
-					p->zero = curbit == numbits - 1
+					p->zero = curbit == (unsigned char)(numbits - 1)
 						? new_leaf_node(symbol)
 						: new_nonleaf_node(0, NULL, NULL);
 					p->zero->parent = p;

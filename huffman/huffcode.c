@@ -19,11 +19,18 @@
 
 #include "huffman.h"
 #include <stdio.h>
-#include <unistd.h>
 #include <string.h>
 #include <errno.h>
 #include <stdlib.h>
 #include <assert.h>
+
+#ifdef WIN32
+#include <malloc.h>
+extern int getopt(int, char**, char*);
+extern char* optarg;
+#else
+#include <unistd.h>
+#endif
 
 static int memory_encode_file(FILE *in, FILE *out);
 static int memory_decode_file(FILE *in, FILE *out);
@@ -130,9 +137,10 @@ main(int argc, char** argv)
 static int
 memory_encode_file(FILE *in, FILE *out)
 {
-	assert(in && out);
 	unsigned char *buf = NULL, *bufout = NULL;
 	unsigned int len = 0, cur = 0, inc = 1024, bufoutlen = 0;
+
+	assert(in && out);
 
 	/* Read the file into memory. */
 	while(!feof(in))
@@ -178,9 +186,9 @@ memory_encode_file(FILE *in, FILE *out)
 static int
 memory_decode_file(FILE *in, FILE *out)
 {
-	assert(in && out);
 	unsigned char *buf = NULL, *bufout = NULL;
 	unsigned int len = 0, cur = 0, inc = 1024, bufoutlen = 0;
+	assert(in && out);
 
 	/* Read the file into memory. */
 	while(!feof(in))
