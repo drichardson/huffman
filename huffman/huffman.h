@@ -1,5 +1,6 @@
 /*
  *  huffman_coder - Encode/Decode files using Huffman encoding.
+ *  http://huffman.sourceforge.net
  *  Copyright (C) 2003  Douglas Ryan Richardson; Gauss Interprise, Inc
  *
  *  This library is free software; you can redistribute it and/or
