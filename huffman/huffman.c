@@ -22,6 +22,7 @@
 #include <string.h>
 #include <netinet/in.h>
 #include <assert.h>
+#include "huffman.h"
 
 typedef struct huffman_node_tag
 {
@@ -1010,22 +1011,19 @@ int huffman_decode_memory(const unsigned char *bufin,
 	huffman_node *root, *p;
 	unsigned int data_count;
 	unsigned int i = 0;
-	buf_cache cache;
+	unsigned char *buf;
+	unsigned int bufcur = 0;
 
 	/* Ensure the arguments are valid. */
 	if(!pbufout || !pbufoutlen)
 		return 1;
 
-	if(init_cache(&cache, CACHE_SIZE, pbufout, pbufoutlen))
-	   return 1;
-	
 	/* Read the Huffman code table. */
 	root = read_code_table_from_memory(bufin, bufinlen, &i, &data_count);
 	if(!root)
-	{
-		free_cache(&cache);
 		return 1;
-	}
+
+	buf = (unsigned char*)malloc(data_count);
 
 	/* Decode the memory. */
 	p = root;
@@ -1040,17 +1038,15 @@ int huffman_decode_memory(const unsigned char *bufin,
 
 			if(p->isLeaf)
 			{
-				write_cache(&cache, &p->symbol, sizeof(p->symbol));
+				buf[bufcur++] = p->symbol;
 				p = root;
 				--data_count;
 			}
 		}
 	}
 
-	/* Flush the cache. */
-	flush_cache(&cache);	
-
 	free_huffman_tree(root);
-	free_cache(&cache);
+	*pbufout = buf;
+	*pbufoutlen = bufcur;
 	return 0;
 }
