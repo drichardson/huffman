@@ -1,21 +1,7 @@
 /*
  *  huffman - Encode/Decode files using Huffman encoding.
  *  http://huffman.sourceforge.net
- *  Copyright (C) 2003  Douglas Ryan Richardson; Gauss Interprise, Inc
- *
- *  This library is free software; you can redistribute it and/or
- *  modify it under the terms of the GNU Lesser General Public
- *  License as published by the Free Software Foundation; either
- *  version 2.1 of the License, or (at your option) any later version.
- *
- *  This library is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- *  Lesser General Public License for more details.
- *
- *  You should have received a copy of the GNU Lesser General Public
- *  License along with this library; if not, write to the Free Software
- *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ *  Copyright (C) 2003  Douglas Ryan Richardson
  */
 
 #include <stdio.h>
@@ -127,7 +113,7 @@ new_code(const huffman_node* leaf)
 		if(cur_bit == 0)
 		{
 			size_t newSize = cur_byte + 1;
-			bits = (char*)realloc(bits, newSize);
+			bits = (unsigned char*)realloc(bits, newSize);
 			bits[newSize - 1] = 0; /* Initialize the new byte. */
 		}
 
