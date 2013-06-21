@@ -1,5 +1,4 @@
 CFLAGS=-O2 -Wall -Werror
-ARCH=x86_64
 ARCH=i386
 CFLAGS=-g -Wall -Werror -arch ${ARCH}
 LDFLAGS=-arch ${ARCH}
