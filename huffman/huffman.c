@@ -492,9 +492,9 @@ calculate_huffman_codes(SymbolFrequencies * pSF)
  * bits in the code is not a multiple of 8.
  */
 static int
-write_code_table(FILE* out, SymbolEncoder *se, unsigned int symbol_count)
+write_code_table(FILE* out, SymbolEncoder *se, uint32_t symbol_count)
 {
-	unsigned long i, count = 0;
+	uint32_t i, count = 0;
 	
 	/* Determine the number of entries in se. */
 	for(i = 0; i < MAX_SYMBOLS; ++i)
@@ -541,9 +541,9 @@ write_code_table(FILE* out, SymbolEncoder *se, unsigned int symbol_count)
 static int
 write_code_table_to_memory(buf_cache *pc,
 						   SymbolEncoder *se,
-						   unsigned int symbol_count)
+						   uint32_t symbol_count)
 {
-	unsigned long i, count = 0;
+	uint32_t i, count = 0;
 
 	/* Determine the number of entries in se. */
 	for(i = 0; i < MAX_SYMBOLS; ++i)
@@ -599,7 +599,7 @@ static huffman_node*
 read_code_table(FILE* in, unsigned int *pDataBytes)
 {
 	huffman_node *root = new_nonleaf_node(0, NULL, NULL);
-	unsigned int count;
+	uint32_t count;
 	
 	/* Read the number of entries.
 	   (it is stored in network byte order). */
@@ -715,10 +715,10 @@ static huffman_node*
 read_code_table_from_memory(const unsigned char* bufin,
 							unsigned int bufinlen,
 							unsigned int *pindex,
-							unsigned int *pDataBytes)
+							uint32_t *pDataBytes)
 {
 	huffman_node *root = new_nonleaf_node(0, NULL, NULL);
-	unsigned int count;
+	uint32_t count;
 	
 	/* Read the number of entries.
 	   (it is stored in network byte order). */
