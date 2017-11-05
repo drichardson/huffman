@@ -20,5 +20,8 @@ huffman.o: huffman.h
 libhuffman.a: huffman.o
 	$(AR) r $@ $<
 
+check: huffcode
+	./run_tests.sh
+
 clean:
 	$(RM) *.o *~ core huffcode huffcode.exe libhuffman.a
