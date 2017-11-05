@@ -16,7 +16,7 @@ compress_test() {
 }
 
 compress_test "test_data/3_line_file"
-#compress_test "test_data/empty_file"
+compress_test "test_data/empty_file"
 
 echo "All Tests Passed"
 

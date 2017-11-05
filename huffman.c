@@ -457,7 +457,7 @@ calculate_huffman_codes(SymbolFrequencies pSF)
 	 * Note that this implementation uses a simple
 	 * count instead of probability.
 	 */
-	for(i = 0; i < n - 1; ++i)
+	for(i = 1; i < n; ++i)
 	{
 		/* Set m1 and m2 to the two subsets of least probability. */
 		m1 = pSF[0];
