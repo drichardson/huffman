@@ -4,3 +4,6 @@ libhuffman has functions for encoding and decoding both files and memory.
 
 libhuffman and huffcode are released under a BSD license.
 
+To build, run: make
+
+To run unit tests, run: make check
