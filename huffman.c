@@ -18,6 +18,8 @@
 #include <netinet/in.h>
 #endif
 
+#define ENABLE_SYMBOL_FREQUENCY_PRINT 1
+
 typedef struct huffman_node_tag
 {
 	unsigned char isLeaf;
@@ -201,9 +203,9 @@ free_encoder(SymbolEncoder *pSE)
 }
 
 static void
-init_frequencies(SymbolFrequencies *pSF)
+init_frequencies(SymbolFrequencies pSF)
 {
-	memset(*pSF, 0, sizeof(SymbolFrequencies));
+	memset(pSF, 0, sizeof(SymbolFrequencies));
 #if 0
 	unsigned int i;
 	for(i = 0; i < MAX_SYMBOLS; ++i)
@@ -309,7 +311,7 @@ static int write_cache(buf_cache* pc,
 }
 
 static unsigned int
-get_symbol_frequencies(SymbolFrequencies *pSF, FILE *in)
+get_symbol_frequencies(SymbolFrequencies pSF, FILE *in)
 {
 	int c;
 	unsigned int total_count = 0;
@@ -321,9 +323,9 @@ get_symbol_frequencies(SymbolFrequencies *pSF, FILE *in)
 	while((c = fgetc(in)) != EOF)
 	{
 		unsigned char uc = c;
-		if(!(*pSF)[uc])
-			(*pSF)[uc] = new_leaf_node(uc);
-		++(*pSF)[uc]->count;
+		if(!pSF[uc])
+			pSF[uc] = new_leaf_node(uc);
+		++(pSF[uc]->count);
 		++total_count;
 	}
 
@@ -331,7 +333,7 @@ get_symbol_frequencies(SymbolFrequencies *pSF, FILE *in)
 }
 
 static unsigned int
-get_symbol_frequencies_from_memory(SymbolFrequencies *pSF,
+get_symbol_frequencies_from_memory(SymbolFrequencies pSF,
 								   const unsigned char *bufin,
 								   unsigned int bufinlen)
 {
@@ -345,9 +347,9 @@ get_symbol_frequencies_from_memory(SymbolFrequencies *pSF,
 	for(i = 0; i < bufinlen; ++i)
 	{
 		unsigned char uc = bufin[i];
-		if(!(*pSF)[uc])
-			(*pSF)[uc] = new_leaf_node(uc);
-		++(*pSF)[uc]->count;
+		if(!pSF[uc])
+			pSF[uc] = new_leaf_node(uc);
+		++(pSF[uc]->count);
 		++total_count;
 	}
 
@@ -381,18 +383,19 @@ SFComp(const void *p1, const void *p2)
 	return 0;
 }
 
-#if 0
+#if ENABLE_SYMBOL_FREQUENCY_PRINT
 static void
-print_freqs(SymbolFrequencies * pSF)
+print_freqs(SymbolFrequencies pSF)
 {
 	size_t i;
 	for(i = 0; i < MAX_SYMBOLS; ++i)
 	{
-		if((*pSF)[i])
-			printf("%d, %ld\n", (*pSF)[i]->symbol, (*pSF)[i]->count);
+		if(pSF[i])
+			printf("%d: %ld,", pSF[i]->symbol, pSF[i]->count);
 		else
-			printf("NULL\n");
+			printf("NULL,");
 	}
+    putchar('\n');
 }
 #endif
 
@@ -423,28 +426,28 @@ build_symbol_encoder(huffman_node *subtree, SymbolEncoder *pSF)
  * which is an array of huffman codes index by symbol value.
  */
 static SymbolEncoder*
-calculate_huffman_codes(SymbolFrequencies * pSF)
+calculate_huffman_codes(SymbolFrequencies pSF)
 {
 	unsigned int i = 0;
 	unsigned int n = 0;
 	huffman_node *m1 = NULL, *m2 = NULL;
 	SymbolEncoder *pSE = NULL;
 	
-#if 0
+#if ENABLE_SYMBOL_FREQUENCY_PRINT
 	printf("BEFORE SORT\n");
 	print_freqs(pSF);
 #endif
 
 	/* Sort the symbol frequency array by ascending frequency. */
-	qsort((*pSF), MAX_SYMBOLS, sizeof((*pSF)[0]), SFComp);
+	qsort(pSF, MAX_SYMBOLS, sizeof(pSF[0]), SFComp);
 
-#if 0	
+#if ENABLE_SYMBOL_FREQUENCY_PRINT
 	printf("AFTER SORT\n");
 	print_freqs(pSF);
 #endif
 
 	/* Get the number of symbols. */
-	for(n = 0; n < MAX_SYMBOLS && (*pSF)[n]; ++n)
+	for(n = 0; n < MAX_SYMBOLS && pSF[n]; ++n)
 		;
 
 	/*
@@ -457,23 +460,23 @@ calculate_huffman_codes(SymbolFrequencies * pSF)
 	for(i = 0; i < n - 1; ++i)
 	{
 		/* Set m1 and m2 to the two subsets of least probability. */
-		m1 = (*pSF)[0];
-		m2 = (*pSF)[1];
+		m1 = pSF[0];
+		m2 = pSF[1];
 
 		/* Replace m1 and m2 with a set {m1, m2} whose probability
 		 * is the sum of that of m1 and m2. */
-		(*pSF)[0] = m1->parent = m2->parent =
+		pSF[0] = m1->parent = m2->parent =
 			new_nonleaf_node(m1->count + m2->count, m1, m2);
-		(*pSF)[1] = NULL;
+		pSF[1] = NULL;
 		
 		/* Put newSet into the correct count position in pSF. */
-		qsort((*pSF), n, sizeof((*pSF)[0]), SFComp);
+		qsort(pSF, n, sizeof(pSF[0]), SFComp);
 	}
 
 	/* Build the SymbolEncoder array from the tree. */
 	pSE = (SymbolEncoder*)malloc(sizeof(SymbolEncoder));
 	memset(pSE, 0, sizeof(SymbolEncoder));
-	build_symbol_encoder((*pSF)[0], pSE);
+	build_symbol_encoder(pSF[0], pSE);
 	return pSE;
 }
 
@@ -904,10 +907,10 @@ huffman_encode_file(FILE *in, FILE *out)
 	unsigned int symbol_count;
 
 	/* Get the frequency of each symbol in the input file. */
-	symbol_count = get_symbol_frequencies(&sf, in);
+	symbol_count = get_symbol_frequencies(sf, in);
 
 	/* Build an optimal table from the symbolCount. */
-	se = calculate_huffman_codes(&sf);
+	se = calculate_huffman_codes(sf);
 	root = sf[0];
 
 	/* Scan the file again and, using the table
@@ -981,10 +984,10 @@ int huffman_encode_memory(const unsigned char *bufin,
 		return 1;
 
 	/* Get the frequency of each symbol in the input memory. */
-	symbol_count = get_symbol_frequencies_from_memory(&sf, bufin, bufinlen);
+	symbol_count = get_symbol_frequencies_from_memory(sf, bufin, bufinlen);
 
 	/* Build an optimal table from the symbolCount. */
-	se = calculate_huffman_codes(&sf);
+	se = calculate_huffman_codes(sf);
 	root = sf[0];
 
 	/* Scan the memory again and, using the table
