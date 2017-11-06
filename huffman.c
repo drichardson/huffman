@@ -996,6 +996,13 @@ huffman_decode_file(FILE *in, FILE *out)
 		while(data_count > 0 && mask)
 		{
             p = byte & mask ? p->one : p->zero;
+            if (p == NULL)
+            {
+                // Invalid file.
+                free_huffman_tree(root);
+                return 1;
+            }
+
             mask <<= 1;
 
 			if(p->isLeaf)
