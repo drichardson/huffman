@@ -691,6 +691,14 @@ read_code_table(FILE* in, huffman_node** rootOut, unsigned int *pDataBytes)
 		 */
 		for(unsigned int curbit = 0; curbit < numbits; ++curbit)
 		{
+            if (p->isLeaf)
+            {
+                // Invalid input.
+                free(bytes);
+                free_huffman_tree(root);
+                return false;
+            }
+
 			if(get_bit(bytes, curbit))
 			{
                 assert(p != NULL);
