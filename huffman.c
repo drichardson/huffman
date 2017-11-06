@@ -600,7 +600,7 @@ write_code_table_to_memory(buf_cache *pc,
  * The returned value should be freed with free_huffman_tree.
  */
 static bool
-read_code_table(FILE* in, huffman_node** rootOut, unsigned int *pDataBytes)
+read_code_table(FILE* in, huffman_node** rootOut, unsigned int *dataBytesOut)
 {
 	huffman_node *root = NULL;
 	uint32_t count = 0;
@@ -620,13 +620,19 @@ read_code_table(FILE* in, huffman_node** rootOut, unsigned int *pDataBytes)
     }
 
 	/* Read the number of data bytes this encoding represents. */
-	if(fread(pDataBytes, sizeof(*pDataBytes), 1, in) != 1)
+    unsigned int dataBytes = 0;
+	if(fread(&dataBytes, sizeof(dataBytes), 1, in) != 1)
 	{
 		return false;
 	}
 
-	*pDataBytes = ntohl(*pDataBytes);
+	dataBytes = ntohl(dataBytes);
 
+    if (count == 0 && dataBytes > 0)
+    {
+        // Cannot decode data bytes without any decode table entries.
+        return false;
+    }
 
 	/* Read the entries. */
 	while(count-- > 0)
@@ -659,6 +665,7 @@ read_code_table(FILE* in, huffman_node** rootOut, unsigned int *pDataBytes)
                 }
 
                 *rootOut = new_leaf_node(symbol);
+                *dataBytesOut = dataBytes;
                 return true;
             }
 
@@ -733,6 +740,7 @@ read_code_table(FILE* in, huffman_node** rootOut, unsigned int *pDataBytes)
 	}
 
     *rootOut = root;
+    *dataBytesOut = dataBytes;
     return true;
 }
 
@@ -969,9 +977,9 @@ huffman_encode_file(FILE *in, FILE *out)
 int
 huffman_decode_file(FILE *in, FILE *out)
 {
-	huffman_node *root, *p;
-	int c;
-	unsigned int data_count;
+	huffman_node *root = NULL, *p = NULL;
+	int c = 0;
+	unsigned int data_count = 0;
 	
 	/* Read the Huffman code table. */
 	if (!read_code_table(in, &root, &data_count))
