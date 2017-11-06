@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdbool.h>
 #include <assert.h>
 #include "huffman.h"
 
@@ -598,8 +599,8 @@ write_code_table_to_memory(buf_cache *pc,
  * in the in file. This function returns NULL on error.
  * The returned value should be freed with free_huffman_tree.
  */
-static huffman_node*
-read_code_table(FILE* in, unsigned int *pDataBytes)
+static bool
+read_code_table(FILE* in, huffman_node** rootOut, unsigned int *pDataBytes)
 {
 	huffman_node *root = NULL;
 	uint32_t count = 0;
@@ -608,15 +609,20 @@ read_code_table(FILE* in, unsigned int *pDataBytes)
 	   (it is stored in network byte order). */
 	if(fread(&count, sizeof(count), 1, in) != 1)
 	{
-		return NULL;
+		return false;
 	}
 
 	count = ntohl(count);
 
+    if (count > MAX_SYMBOLS)
+    {
+        return false;
+    }
+
 	/* Read the number of data bytes this encoding represents. */
 	if(fread(pDataBytes, sizeof(*pDataBytes), 1, in) != 1)
 	{
-		return NULL;
+		return false;
 	}
 
 	*pDataBytes = ntohl(*pDataBytes);
@@ -625,27 +631,21 @@ read_code_table(FILE* in, unsigned int *pDataBytes)
 	/* Read the entries. */
 	while(count-- > 0)
 	{
-		int c;
-		unsigned int curbit;
-		unsigned char symbol;
-		unsigned char numbits;
-		unsigned char numbytes;
-		unsigned char *bytes;
+		int c = 0;
+	
+		if((c = fgetc(in)) == EOF)
+		{
+			free_huffman_tree(root);
+            return false;
+		}
+		unsigned char symbol = (unsigned char)c;
 		
 		if((c = fgetc(in)) == EOF)
 		{
 			free_huffman_tree(root);
-			return NULL;
+            return false;
 		}
-		symbol = (unsigned char)c;
-		
-		if((c = fgetc(in)) == EOF)
-		{
-			free_huffman_tree(root);
-			return NULL;
-		}
-		
-		numbits = (unsigned char)c;
+		unsigned char numbits = (unsigned char)c;
 
         if (root == NULL)
         {
@@ -655,10 +655,11 @@ read_code_table(FILE* in, unsigned int *pDataBytes)
 
                 if (count != 0) {
                     // Invalid code table. Abort processing.
-                    return NULL;
+                    return false;
                 }
 
-                return new_leaf_node(symbol);
+                *rootOut = new_leaf_node(symbol);
+                return true;
             }
 
             root = new_nonleaf_node(0, NULL, NULL);
@@ -667,19 +668,19 @@ read_code_table(FILE* in, unsigned int *pDataBytes)
         if (numbits == 0) {
             // Valid code tables only have 0 bit length codes if they encode only 1 symbol.
             free_huffman_tree(root);
-            return NULL;
+            return false;
 
         }
 
+        assert(root != NULL);
 		huffman_node *p = root;
-
-		numbytes = (unsigned char)numbytes_from_numbits(numbits);
-		bytes = (unsigned char*)malloc(numbytes);
+		unsigned char numbytes = (unsigned char)numbytes_from_numbits(numbits);
+		unsigned char *bytes = (unsigned char*)malloc(numbytes);
 		if(fread(bytes, 1, numbytes, in) != numbytes)
 		{
 			free(bytes);
 			free_huffman_tree(root);
-			return NULL;
+            return false;
 		}
 
 		/*
@@ -688,28 +689,34 @@ read_code_table(FILE* in, unsigned int *pDataBytes)
 		 * zero and one child nodes in the tree. New nodes
 		 * are added as needed in the tree.
 		 */
-		for(curbit = 0; curbit < numbits; ++curbit)
+		for(unsigned int curbit = 0; curbit < numbits; ++curbit)
 		{
 			if(get_bit(bytes, curbit))
 			{
+                assert(p != NULL);
 				if(p->one == NULL)
 				{
 					p->one = curbit == (unsigned char)(numbits - 1)
 						? new_leaf_node(symbol)
 						: new_nonleaf_node(0, NULL, NULL);
+                    assert(p->one != NULL);
 					p->one->parent = p;
 				}
+                assert(p->one != NULL);
 				p = p->one;
 			}
 			else
 			{
+                assert(p != NULL);
 				if(p->zero == NULL)
 				{
 					p->zero = curbit == (unsigned char)(numbits - 1)
 						? new_leaf_node(symbol)
 						: new_nonleaf_node(0, NULL, NULL);
+                    assert(p->zero != NULL);
 					p->zero->parent = p;
 				}
+                assert(p->zero != NULL);
 				p = p->zero;
 			}
 		}
@@ -717,7 +724,8 @@ read_code_table(FILE* in, unsigned int *pDataBytes)
 		free(bytes);
 	}
 
-	return root;
+    *rootOut = root;
+    return true;
 }
 
 static int
@@ -958,17 +966,15 @@ huffman_decode_file(FILE *in, FILE *out)
 	unsigned int data_count;
 	
 	/* Read the Huffman code table. */
-	root = read_code_table(in, &data_count);
+	if (!read_code_table(in, &root, &data_count))
+    {
+        return 1;
+    }
 
     if (root == NULL && data_count == 0) {
         // This is what an empty encoded file looks like. It's valid, but nothing to do.
         // Exit out here so we don't have to special case NULL roots and 0 data_counts.
         return 0;
-    }
-
-	if(root == NULL && data_count > 0) {
-        // This is a bad code table. There's encoded data, but the encoding table couldn't be read.
-		return 1;
     }
 
     if (root->isLeaf) {
