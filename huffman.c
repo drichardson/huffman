@@ -18,7 +18,7 @@
 #include <netinet/in.h>
 #endif
 
-#define ENABLE_SYMBOL_FREQUENCY_PRINT 1
+#define ENABLE_SYMBOL_FREQUENCY_PRINT 0
 
 typedef struct huffman_node_tag
 {
@@ -601,14 +601,13 @@ write_code_table_to_memory(buf_cache *pc,
 static huffman_node*
 read_code_table(FILE* in, unsigned int *pDataBytes)
 {
-	huffman_node *root = new_nonleaf_node(0, NULL, NULL);
-	uint32_t count;
+	huffman_node *root = NULL;
+	uint32_t count = 0;
 	
 	/* Read the number of entries.
 	   (it is stored in network byte order). */
 	if(fread(&count, sizeof(count), 1, in) != 1)
 	{
-		free_huffman_tree(root);
 		return NULL;
 	}
 
@@ -617,7 +616,6 @@ read_code_table(FILE* in, unsigned int *pDataBytes)
 	/* Read the number of data bytes this encoding represents. */
 	if(fread(pDataBytes, sizeof(*pDataBytes), 1, in) != 1)
 	{
-		free_huffman_tree(root);
 		return NULL;
 	}
 
@@ -633,7 +631,6 @@ read_code_table(FILE* in, unsigned int *pDataBytes)
 		unsigned char numbits;
 		unsigned char numbytes;
 		unsigned char *bytes;
-		huffman_node *p = root;
 		
 		if((c = fgetc(in)) == EOF)
 		{
@@ -649,6 +646,33 @@ read_code_table(FILE* in, unsigned int *pDataBytes)
 		}
 		
 		numbits = (unsigned char)c;
+
+        if (root == NULL)
+        {
+            if (numbits == 0)
+            {
+                // Valid code tables only have 0 bit length codes if they encode only 1 symbol.
+
+                if (count != 0) {
+                    // Invalid code table. Abort processing.
+                    return NULL;
+                }
+
+                return new_leaf_node(symbol);
+            }
+
+            root = new_nonleaf_node(0, NULL, NULL);
+        }
+
+        if (numbits == 0) {
+            // Valid code tables only have 0 bit length codes if they encode only 1 symbol.
+            free_huffman_tree(root);
+            return NULL;
+
+        }
+
+		huffman_node *p = root;
+
 		numbytes = (unsigned char)numbytes_from_numbits(numbits);
 		bytes = (unsigned char*)malloc(numbytes);
 		if(fread(bytes, 1, numbytes, in) != numbytes)
@@ -935,10 +959,29 @@ huffman_decode_file(FILE *in, FILE *out)
 	
 	/* Read the Huffman code table. */
 	root = read_code_table(in, &data_count);
-	if(!root)
-		return 1;
 
-	/* Decode the file. */
+    if (root == NULL && data_count == 0) {
+        // This is what an empty encoded file looks like. It's valid, but nothing to do.
+        // Exit out here so we don't have to special case NULL roots and 0 data_counts.
+        return 0;
+    }
+
+	if(root == NULL && data_count > 0) {
+        // This is a bad code table. There's encoded data, but the encoding table couldn't be read.
+		return 1;
+    }
+
+    if (root->isLeaf) {
+        // This is a one symbol file. That means it's decoded only with data_count since
+        // the symbol is encoded with a 0 length bit pattern.
+        while(data_count-- > 0) {
+            fputc(root->symbol, out);
+        }
+        free_huffman_tree(root);
+        return 0;
+    }
+
+    // This is a multi-symbol, non-empty file.
 	p = root;
 	while(data_count > 0 && (c = fgetc(in)) != EOF)
 	{
@@ -946,8 +989,8 @@ huffman_decode_file(FILE *in, FILE *out)
 		unsigned char mask = 1;
 		while(data_count > 0 && mask)
 		{
-			p = byte & mask ? p->one : p->zero;
-			mask <<= 1;
+            p = byte & mask ? p->one : p->zero;
+            mask <<= 1;
 
 			if(p->isLeaf)
 			{
