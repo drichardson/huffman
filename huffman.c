@@ -3,18 +3,17 @@
  *  http://huffman.sourceforge.net
  *  Copyright (C) 2003  Douglas Ryan Richardson
  */
+#include "huffman.h"
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
 #include <assert.h>
-#include "huffman.h"
 
 #ifdef WIN32
 #include <winsock2.h>
 #include <malloc.h>
-#define alloca _alloca
 #else
 #include <netinet/in.h>
 #endif
@@ -71,7 +70,7 @@ reverse_bits(unsigned char* bits, unsigned long numbits)
 {
 	unsigned long numbytes = numbytes_from_numbits(numbits);
 	unsigned char *tmp =
-	    (unsigned char*)alloca(numbytes);
+	    (unsigned char*)malloc(numbytes);
 	unsigned long curbit;
 	long curbyte = 0;
 	
@@ -88,6 +87,7 @@ reverse_bits(unsigned char* bits, unsigned long numbits)
 	}
 
 	memcpy(bits, tmp, numbytes);
+    free(tmp);
 }
 
 /*
