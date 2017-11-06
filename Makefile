@@ -24,4 +24,4 @@ check: huffcode
 	./run_tests.sh
 
 clean:
-	$(RM) *.o *~ core huffcode huffcode.exe libhuffman.a
+	$(RM) -r *.o *~ core huffcode huffcode.exe libhuffman.a scratch
