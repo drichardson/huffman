@@ -52,6 +52,9 @@ main(int argc, char** argv)
 	const char *file_in = NULL, *file_out = NULL;
 	FILE *in = stdin;
 	FILE *out = stdout;
+	int close_in = 0;
+	int close_out = 0;
+	int rc = 0;
 
 	/* Get the command line arguments. */
 	while((opt = getopt(argc, argv, "i:o:cdhvm")) != -1)
@@ -96,6 +99,7 @@ main(int argc, char** argv)
 					file_in, strerror(errno));
 			return 1;
 		}
+		close_in = 1;
 	}
 
 	/* If an output file is given then create it. */
@@ -109,6 +113,7 @@ main(int argc, char** argv)
 					file_out, strerror(errno));
 			return 1;
 		}
+		close_out = 1;
 	}
 
 	if(memory)
@@ -117,8 +122,27 @@ main(int argc, char** argv)
 			memory_encode_file(in, out) : memory_decode_file(in, out);
 	}
 
-	return compress ?
-		huffman_encode_file(in, out) : huffman_decode_file(in, out);
+	if (compress)
+	{
+		rc = huffman_encode_file(in, out);
+	}
+	else
+	{
+		rc = huffman_decode_file(in, out);
+	}
+
+	/* Since exit is about to happen, the fclose calls aren't necessary, but they make valgrind happy. */
+	if (close_in)
+	{
+		fclose(in);
+	}
+
+	if (close_out)
+	{
+		fclose(out);
+	}
+
+	return rc;
 }
 
 static int
