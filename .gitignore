@@ -1,0 +1,4 @@
+huffcode
+huffcode.o
+huffman.o
+libhuffman.a
