@@ -19,8 +19,13 @@ if [[ $# -gt 0 ]]; then
     shift
 fi
 
-rm -rf scratch
-mkdir scratch
+SCRATCH=$(mktemp --tmpdir -d huffman.XXXXXXXXXX)
+# echo "Using temporary directory $SCRATCH"
+cleanup() {
+    # echo "Cleaning up $SCRATCH"
+    rm -r "$SCRATCH"
+}
+trap cleanup EXIT
 
 HUFFCODE="./huffcode"
 
@@ -31,7 +36,7 @@ fi
 
 compress_test() {
     local IN=$1
-    local OUT=scratch/$(basename $IN)
+    local OUT="$SCRATCH/$(basename $IN)"
     echo "compress_test $IN"
     set +e
     $HUFFCODE -i "$IN" -o "$OUT.compressed"
@@ -56,7 +61,7 @@ compress_test() {
 # but is used to make sure invalid code tables do not crash the decompressor.
 decompress_test() {
     local IN=$1
-    local OUT=scratch/$(basename $IN)
+    local OUT="$SCRATCH/$(basename $IN)"
     echo "decompress_test $IN"
     set +e
     $HUFFCODE -d -i "$IN" -o "$OUT.decompressed"
@@ -83,7 +88,6 @@ echo "Issue 2 Regression Checks..."
 for file in "test_data/reported_issues/issue2/"*; do
     decompress_test "$file"
 done
-
 
 echo "All Tests Passed"
 
