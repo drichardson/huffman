@@ -15,3 +15,8 @@ To build, run:
 To run unit tests, run:
 
     make check
+
+To run unit tests under valgrind, run:
+
+    make valgrind_check
+

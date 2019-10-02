@@ -23,5 +23,8 @@ libhuffman.a: huffman.o
 check: huffcode
 	./run_tests.sh
 
+valgrind_check: huffcode
+	./run_tests.sh USE_VALGRIND
+
 clean:
 	$(RM) -r *.o *~ core huffcode huffcode.exe libhuffman.a scratch

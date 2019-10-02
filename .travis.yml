@@ -1,3 +1,10 @@
 language: c
 
-script: make check
+dist: bionic
+
+before_install:
+    - sudo apt-get install -y valgrind
+
+script:
+    - make check
+    - make valgrind_check

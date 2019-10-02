@@ -1,22 +1,45 @@
 #!/bin/bash
+set -euo pipefail
+shopt -s inherit_errexit
 
-set -e
-#set -x
+USE_VALGRIND=0
+
+usage() {
+    echo "Usage: run_tests.sh [USE_VALGRIND]"
+}
+
+if [[ $# -gt 0 ]]; then
+    if [[ $1 -eq "USE_VALGRIND" ]]; then
+        USE_VALGRIND=1
+    else
+        echo "Invalid parameter $1."
+        usage
+        exit
+    fi
+    shift
+fi
 
 rm -rf scratch
 mkdir scratch
+
+HUFFCODE="./huffcode"
+
+if [[ $USE_VALGRIND == 1 ]]; then
+    VALGRIND="valgrind --tool=memcheck --memcheck:leak-check=yes --leak-check=full --errors-for-leak-kinds=all --show-leak-kinds=all --track-origins=yes --error-exitcode=1"
+    HUFFCODE="$VALGRIND $HUFFCODE"
+fi
 
 compress_test() {
     local IN=$1
     local OUT=scratch/$(basename $IN)
     echo "compress_test $IN"
     set +e
-    ./huffcode -i "$IN" -o "$OUT.compressed"
+    $HUFFCODE -i "$IN" -o "$OUT.compressed"
     if [ "$?" != 0 ]; then
         echo "FAILURE: huffcode encode failed on $IN"
         exit 1
     fi
-    ./huffcode -d -i "$OUT.compressed" -o "$OUT.decompressed"
+    $HUFFCODE -d -i "$OUT.compressed" -o "$OUT.decompressed"
     if [ "$?" != 0 ]; then
         echo "FAILURE: huffcode decode failed on $OUT.compressed"
         exit 1
@@ -36,7 +59,7 @@ decompress_test() {
     local OUT=scratch/$(basename $IN)
     echo "decompress_test $IN"
     set +e
-    ./huffcode -d -i "$IN" -o "$OUT.decompressed"
+    $HUFFCODE -d -i "$IN" -o "$OUT.decompressed"
     local STATUS=$?
     if [ "$STATUS" != 1 ]; then
         echo "Expected test to fail with 1 but got $STATUS."
