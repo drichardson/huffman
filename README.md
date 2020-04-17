@@ -6,8 +6,6 @@ A huffman coding library and command line interface to the library. The encoder 
 
 libhuffman has functions for encoding and decoding both files and memory.
 
-libhuffman and huffcode are released under a BSD license.
-
 To build, run:
 
     make
