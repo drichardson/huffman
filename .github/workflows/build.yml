@@ -1,0 +1,22 @@
+name: Build
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install Apt Packages
+        run: |
+          sudo apt-get -qq -y install valgrind
+      - name: Compile
+        run: make
+      - name: Check
+        run: make check
+      - name: Valgrind Check
+        run: make valgrind_check
