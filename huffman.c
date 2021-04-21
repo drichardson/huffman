@@ -1,8 +1,3 @@
-/*
- *  huffman - Encode/Decode files using Huffman encoding.
- *  http://huffman.sourceforge.net
- *  Copyright (C) 2003  Douglas Ryan Richardson
- */
 #include "huffman.h"
 
 #include <assert.h>

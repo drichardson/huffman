@@ -1,9 +1,3 @@
-/*
- *  huffcode - Encode/Decode files using Huffman encoding.
- *  http://huffman.sourceforge.net
- *  Copyright (C) 2003  Douglas Ryan Richardson
- */
-
 #include "huffman.h"
 
 #include <assert.h>
@@ -22,14 +16,6 @@ extern char* optarg;
 
 static int memory_encode_file(FILE* in, FILE* out);
 static int memory_decode_file(FILE* in, FILE* out);
-
-static void version(FILE* out)
-{
-	fputs("huffcode 0.3\n"
-	      "Copyright (C) 2003 Douglas Ryan Richardson"
-	      "; Gauss Interprise, Inc\n",
-	      out);
-}
 
 static void usage(FILE* out)
 {
@@ -73,9 +59,6 @@ int main(int argc, char** argv)
 			break;
 		case 'h':
 			usage(stdout);
-			return 0;
-		case 'v':
-			version(stdout);
 			return 0;
 		case 'm':
 			memory = 1;
