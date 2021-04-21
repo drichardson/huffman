@@ -5,11 +5,12 @@
  */
 
 #include "huffman.h"
-#include <stdio.h>
-#include <string.h>
-#include <errno.h>
-#include <stdlib.h>
+
 #include <assert.h>
+#include <errno.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 #ifdef WIN32
 #include <malloc.h>
@@ -19,11 +20,10 @@ extern char* optarg;
 #include <unistd.h>
 #endif
 
-static int memory_encode_file(FILE *in, FILE *out);
-static int memory_decode_file(FILE *in, FILE *out);
+static int memory_encode_file(FILE* in, FILE* out);
+static int memory_decode_file(FILE* in, FILE* out);
 
-static void
-version(FILE *out)
+static void version(FILE* out)
 {
 	fputs("huffcode 0.3\n"
 	      "Copyright (C) 2003 Douglas Ryan Richardson"
@@ -31,35 +31,33 @@ version(FILE *out)
 	      out);
 }
 
-static void
-usage(FILE* out)
+static void usage(FILE* out)
 {
 	fputs("Usage: huffcode [-i<input file>] [-o<output file>] [-d|-c]\n"
-		  "-i - input file (default is standard input)\n"
-		  "-o - output file (default is standard output)\n"
-		  "-d - decompress\n"
-		  "-c - compress (default)\n"
-		  "-m - read file into memory, compress, then write to file (not default)\n",
-		  out);
+	      "-i - input file (default is standard input)\n"
+	      "-o - output file (default is standard output)\n"
+	      "-d - decompress\n"
+	      "-c - compress (default)\n"
+	      "-m - read file into memory, compress, then write to file (not default)\n",
+	      out);
 }
 
-int
-main(int argc, char** argv)
+int main(int argc, char** argv)
 {
 	char memory = 0;
 	char compress = 1;
 	int opt;
 	const char *file_in = NULL, *file_out = NULL;
-	FILE *in = stdin;
-	FILE *out = stdout;
+	FILE* in = stdin;
+	FILE* out = stdout;
 	int close_in = 0;
 	int close_out = 0;
 	int rc = 0;
 
 	/* Get the command line arguments. */
-	while((opt = getopt(argc, argv, "i:o:cdhvm")) != -1)
+	while ((opt = getopt(argc, argv, "i:o:cdhvm")) != -1)
 	{
-		switch(opt)
+		switch (opt)
 		{
 		case 'i':
 			file_in = optarg;
@@ -89,37 +87,34 @@ main(int argc, char** argv)
 	}
 
 	/* If an input file is given then open it. */
-	if(file_in)
+	if (file_in)
 	{
 		in = fopen(file_in, "rb");
-		if(!in)
+		if (!in)
 		{
-			fprintf(stderr,
-					"Can't open input file '%s': %s\n",
-					file_in, strerror(errno));
+			fprintf(
+			    stderr, "Can't open input file '%s': %s\n", file_in, strerror(errno));
 			return 1;
 		}
 		close_in = 1;
 	}
 
 	/* If an output file is given then create it. */
-	if(file_out)
+	if (file_out)
 	{
 		out = fopen(file_out, "wb");
-		if(!out)
+		if (!out)
 		{
-			fprintf(stderr,
-					"Can't open output file '%s': %s\n",
-					file_out, strerror(errno));
+			fprintf(
+			    stderr, "Can't open output file '%s': %s\n", file_out, strerror(errno));
 			return 1;
 		}
 		close_out = 1;
 	}
 
-	if(memory)
+	if (memory)
 	{
-		return compress ?
-			memory_encode_file(in, out) : memory_decode_file(in, out);
+		return compress ? memory_encode_file(in, out) : memory_decode_file(in, out);
 	}
 
 	if (compress)
@@ -131,7 +126,8 @@ main(int argc, char** argv)
 		rc = huffman_decode_file(in, out);
 	}
 
-	/* Since exit is about to happen, the fclose calls aren't necessary, but they make valgrind happy. */
+	/* Since exit is about to happen, the fclose calls aren't necessary, but they make valgrind
+	 * happy. */
 	if (close_in)
 	{
 		fclose(in);
@@ -145,8 +141,7 @@ main(int argc, char** argv)
 	return rc;
 }
 
-static int
-memory_encode_file(FILE *in, FILE *out)
+static int memory_encode_file(FILE* in, FILE* out)
 {
 	unsigned char *buf = NULL, *bufout = NULL;
 	unsigned int len = 0, cur = 0, inc = 1024, bufoutlen = 0;
@@ -154,14 +149,14 @@ memory_encode_file(FILE *in, FILE *out)
 	assert(in && out);
 
 	/* Read the file into memory. */
-	while(!feof(in))
+	while (!feof(in))
 	{
-		unsigned char *tmp;
+		unsigned char* tmp;
 		len += inc;
 		tmp = (unsigned char*)realloc(buf, len);
-		if(!tmp)
+		if (!tmp)
 		{
-			if(buf)
+			if (buf)
 				free(buf);
 			return 1;
 		}
@@ -170,11 +165,11 @@ memory_encode_file(FILE *in, FILE *out)
 		cur += fread(buf + cur, 1, inc, in);
 	}
 
-	if(!buf)
+	if (!buf)
 		return 1;
 
 	/* Encode the memory. */
-	if(huffman_encode_memory(buf, cur, &bufout, &bufoutlen))
+	if (huffman_encode_memory(buf, cur, &bufout, &bufoutlen))
 	{
 		free(buf);
 		return 1;
@@ -183,7 +178,7 @@ memory_encode_file(FILE *in, FILE *out)
 	free(buf);
 
 	/* Write the memory to the file. */
-	if(fwrite(bufout, 1, bufoutlen, out) != bufoutlen)
+	if (fwrite(bufout, 1, bufoutlen, out) != bufoutlen)
 	{
 		free(bufout);
 		return 1;
@@ -194,22 +189,21 @@ memory_encode_file(FILE *in, FILE *out)
 	return 0;
 }
 
-static int
-memory_decode_file(FILE *in, FILE *out)
+static int memory_decode_file(FILE* in, FILE* out)
 {
 	unsigned char *buf = NULL, *bufout = NULL;
 	unsigned int len = 0, cur = 0, inc = 1024, bufoutlen = 0;
 	assert(in && out);
 
 	/* Read the file into memory. */
-	while(!feof(in))
+	while (!feof(in))
 	{
-		unsigned char *tmp;
+		unsigned char* tmp;
 		len += inc;
 		tmp = (unsigned char*)realloc(buf, len);
-		if(!tmp)
+		if (!tmp)
 		{
-			if(buf)
+			if (buf)
 				free(buf);
 			return 1;
 		}
@@ -218,11 +212,11 @@ memory_decode_file(FILE *in, FILE *out)
 		cur += fread(buf + cur, 1, inc, in);
 	}
 
-	if(!buf)
+	if (!buf)
 		return 1;
 
 	/* Decode the memory. */
-	if(huffman_decode_memory(buf, cur, &bufout, &bufoutlen))
+	if (huffman_decode_memory(buf, cur, &bufout, &bufoutlen))
 	{
 		free(buf);
 		return 1;
@@ -231,7 +225,7 @@ memory_decode_file(FILE *in, FILE *out)
 	free(buf);
 
 	/* Write the memory to the file. */
-	if(fwrite(bufout, 1, bufoutlen, out) != bufoutlen)
+	if (fwrite(bufout, 1, bufoutlen, out) != bufoutlen)
 	{
 		free(bufout);
 		return 1;

@@ -1,0 +1,40 @@
+---
+AccessModifierOffset: -8
+AllowShortFunctionsOnASingleLine: true
+AlwaysBreakTemplateDeclarations: true
+BinPackArguments: false
+BinPackParameters: false
+BreakBeforeBraces: Custom
+BraceWrapping:
+  AfterEnum: false
+  AfterCaseLabel: true
+  AfterClass: true
+  AfterControlStatement: Always
+  AfterFunction: true
+  AfterNamespace: false
+  AfterStruct: true
+  AfterUnion: true
+  AfterExternBlock: false
+  BeforeCatch: true
+  BeforeElse: true
+  BeforeLambdaBody: false
+  BeforeWhile: true
+BreakConstructorInitializers: BeforeComma
+ColumnLimit: 100
+CompactNamespaces: true
+IncludeBlocks: Regroup
+IncludeCategories:
+  - Regex: '".*"'
+    Priority: 1
+  - Regex: '^<.*\.(h)>'
+    Priority: 3
+  - Regex: '^<.*>'
+    Priority: 4
+IndentWidth: '8'
+PointerAlignment: Left
+SpaceBeforeRangeBasedForLoopColon: true
+Standard: Cpp11
+TabWidth: '8'
+UseTab: Always
+
+...
