@@ -13,10 +13,16 @@ jobs:
       - uses: actions/checkout@v2
       - name: Install Apt Packages
         run: |
-          sudo apt-get -qq -y install valgrind
+          sudo apt-get -qq -y install valgrind cmake
       - name: Compile
         run: make
       - name: Check
         run: make check
       - name: Valgrind Check
         run: make valgrind_check
+      - name: CMake Compile
+        run: cmake . && make
+      - name: CMake Check
+        run: ctest -R ^check$
+      - name: CMake Valgrind Check
+        run: ctest -R ^valgrind_check$
