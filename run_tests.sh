@@ -3,21 +3,33 @@ set -euo pipefail
 shopt -s inherit_errexit
 
 USE_VALGRIND=0
+HUFFCODE="./huffcode"
 
 usage() {
     echo "Usage: run_tests.sh [USE_VALGRIND]"
 }
 
-if [[ $# -gt 0 ]]; then
-    if [[ $1 -eq "USE_VALGRIND" ]]; then
-        USE_VALGRIND=1
-    else
-        echo "Invalid parameter $1."
-        usage
-        exit
-    fi
-    shift
-fi
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --use-valgrind)
+            USE_VALGRIND=1
+            shift
+            ;;
+        --huffcode)
+            shift
+            if [[ $# -eq 0 ]]; then
+                echo "Missing argument for --huffcode"
+                exit 1
+            fi
+            HUFFCODE=$1
+            shift
+            ;;
+        *)
+            echo "Unexpected parameter $1"
+            exit 1
+            ;;
+    esac
+done
 
 SCRATCH=$(mktemp --tmpdir -d huffman.XXXXXXXXXX)
 # echo "Using temporary directory $SCRATCH"
@@ -26,8 +38,6 @@ cleanup() {
     rm -r "$SCRATCH"
 }
 trap cleanup EXIT
-
-HUFFCODE="./huffcode"
 
 if [[ $USE_VALGRIND == 1 ]]; then
     VALGRIND="valgrind --tool=memcheck --memcheck:leak-check=yes --leak-check=full --errors-for-leak-kinds=all --show-leak-kinds=all --track-origins=yes --error-exitcode=1"
