@@ -6,15 +6,40 @@ A huffman coding library and command line interface to the library. The encoder 
 
 libhuffman has functions for encoding and decoding both files and memory.
 
-To build, run:
+
+## Makefile Build
+
+To build:
 
     make
 
-To run unit tests, run:
+To run unit tests:
 
     make check
 
-To run unit tests under valgrind, run:
+To run unit tests under valgrind:
 
     make valgrind_check
+
+
+## CMake Build
+
+To build:
+
+    mkdir build
+    cd build
+    cmake ..
+    cmake --build .
+
+To run all tests:
+
+    ctest
+
+To run unit tests:
+
+    ctest -R ^check$
+
+To run unit tests under valgrind:
+
+    ctest -R ^valgrind_check$
 
