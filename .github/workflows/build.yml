@@ -21,6 +21,6 @@ jobs:
       - name: Valgrind Check
         run: make valgrind_check
       - name: CMake Compile
-        run: mkdir build && cmake .. && make
+        run: mkdir build && cd build && cmake .. && make
       - name: CMake Test
         run: cd build && ctest
