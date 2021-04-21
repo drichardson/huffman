@@ -3,7 +3,7 @@
 # or
 # make ARCH=x86_64
 
-CFLAGS=-g -Wall -Werror -O0 -std=c11 -D_POSIX_C_SOURCE=2
+CFLAGS=-g -Wall -Werror -Wextra -O0 -std=c11 -D_POSIX_C_SOURCE=2
 
 ifdef ARCH
 LDFLAGS+=-arch ${ARCH}
