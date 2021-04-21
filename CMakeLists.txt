@@ -2,16 +2,16 @@
 set(CMAKE_OSX_DEPLOYMENT_TARGET "10.9" CACHE STRING "Minimum OS X deployment version")
 project (huffman)
 
-set(CMAKE_C_STANDARD 99)
+set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_C_EXTENSIONS OFF)
 
 if(MSVC)
-    add_definitions (-D_WIN32_WINNT=0x0601)
+    add_definitions (-D_WIN32_WINNT=0x0400)
     add_definitions (-D_SCL_SECURE_NO_WARNINGS=1)
     add_definitions (-D_CRT_SECURE_NO_WARNINGS=1)
 
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /EHsc /utf-8")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /utf-8")
 endif()
 
 set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS TRUE)
